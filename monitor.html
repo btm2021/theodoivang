@@ -27,6 +27,12 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .collapse-button svg {
+      transition: transform 0.2s ease-in-out;
+    }
+    .collapse-button.expanded svg {
+      transform: rotate(180deg);
+    }
   </style>
 </head>
 
@@ -51,6 +57,7 @@
                 <th class="px-3 py-2 text-left">Mua</th>
                 <th class="px-3 py-2 text-left">Bán</th>
                 <th class="px-3 py-2 text-left">Chênh (Triệu/Lượng)</th>
+                <th class="px-3 py-2 text-center">Chi tiết</th>
               </tr>
             </thead>
             <tbody id="internalTableBody" class="divide-y divide-gray-100">
@@ -63,30 +70,53 @@
       </section>
 
       <!-- Public Prices -->
-      <section class="lg:col-span-1 bg-white border border-gray-200 rounded">
-        <div class="px-4 py-2 border-b border-gray-200 bg-gray-50">
-          <h2 class="text-sm font-semibold text-gray-700">Giá công khai (Webgia)</h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="bg-gray-100 text-gray-600 text-xs uppercase">
-              <tr>
-                <th class="px-3 py-2 text-left">Loại</th>
-                <th class="px-3 py-2 text-left">Tuổi</th>
-                <th class="px-3 py-2 text-left">Mua</th>
-                <th class="px-3 py-2 text-left">Bán</th>
-              </tr>
-            </thead>
-            <tbody id="publicTableBody" class="divide-y divide-gray-100">
-              <tr>
-                <td colspan="4" class="px-3 py-4 text-center text-gray-500">Đang tải...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-  </main>
+      <div class="lg:col-span-1 flex flex-col gap-4">
+        <section class="bg-white border border-gray-200 rounded">
+          <div class="px-4 py-2 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-sm font-semibold text-gray-700">Giá công khai (Webgia)</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="bg-gray-100 text-gray-600 text-xs uppercase">
+                <tr>
+                  <th class="px-3 py-2 text-left">Loại</th>
+                  <th class="px-3 py-2 text-left">Tuổi</th>
+                  <th class="px-3 py-2 text-left">Mua</th>
+                  <th class="px-3 py-2 text-left">Bán</th>
+                </tr>
+              </thead>
+              <tbody id="publicTableBody" class="divide-y divide-gray-100">
+                <tr>
+                  <td colspan="4" class="px-3 py-4 text-center text-gray-500">Đang tải...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Quick Calculator -->
+        <section id="quickCalcSection" class="bg-white border border-gray-200 rounded" style="display: none;">
+          <div class="px-4 py-2 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-sm font-semibold text-gray-700">Tính nhanh</h2>
+          </div>
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div class="col-span-1">
+                <label for="goldTypeSelect" class="block text-xs font-medium text-gray-600 mb-1">Loại vàng</label>
+                <select id="goldTypeSelect" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+              </div>
+              <div class="col-span-1">
+                <label for="goldWeightInput" class="block text-xs font-medium text-gray-600 mb-1">Trọng lượng (chỉ)</label>
+                <input type="number" id="goldWeightInput" placeholder="VD: 1.5" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+              </div>
+              <div class="col-span-1">
+                <button id="calculateBtn" class="w-full bg-blue-600 text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Tính toán</button>
+              </div>
+            </div>
+            <div id="quickCalcResult" class="mt-4 text-sm"></div>
+          </div>
+        </section>
+      </div>
 
   <!-- Loading Overlay -->
   <div id="loadingOverlay" class="loading-overlay">
@@ -153,7 +183,7 @@
             id: 'internal-item-doi-610',
             code: '610',
             age: '610',
-            hienthi:'980 Đổi 100k',
+            hienthi:'610 Đổi 100k',
             buyingPrice: (Number(gold610.sellingPrice) || 0) - 100,
             sellingPrice: (Number(gold610.sellingPrice) || 0) - 100,
           });
@@ -184,6 +214,7 @@
         }
         console.log(internalData)
         renderInternalTable();
+        renderQuickCalcForm();
         return true;
       } catch (e) {
         console.error('Lỗi khi tải dữ liệu nội bộ:', e);
@@ -292,7 +323,7 @@
     function renderInternalTable() {
       const tbody = document.getElementById('internalTableBody');
       if (!Array.isArray(internalData) || internalData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-3 py-4 text-center text-gray-500">Không có dữ liệu</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-3 py-4 text-center text-gray-500">Không có dữ liệu</td></tr>';
         return;
       }
       let html = '';
@@ -308,9 +339,14 @@
             <td class="px-3 py-2 text-xs font-semibold text-blue-600">${buy}</td>
             <td class="px-3 py-2 text-xs font-semibold text-blue-600">${sell}</td>
             <td class="px-3 py-2 text-xs font-semibold ${cls}">${profitText}</td>
+            <td class="px-3 py-2 text-center">
+              <button class="collapse-button p-1 rounded-full hover:bg-gray-200" data-target="#detail-${item.id}">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+              </button>
+            </td>
           </tr>
-          <tr class="bg-gray-50">
-             <td colspan="5" class="p-0">${renderDetailedComparison(item)}</td>
+          <tr id="detail-${item.id}" class="bg-gray-50 hidden">
+             <td colspan="6" class="p-0">${renderDetailedComparison(item)}</td>
           </tr>
         `;
       });
@@ -367,6 +403,73 @@
       `;
     }
 
+    
+
+    function renderQuickCalcForm() {
+      const select = document.getElementById('goldTypeSelect');
+      if (!select || !Array.isArray(internalData) || internalData.length === 0) {
+        document.getElementById('quickCalcSection').style.display = 'none';
+        return;
+      }
+      
+      let optionsHtml = '<option value="">-- Chọn loại vàng --</option>';
+      internalData.forEach(item => {
+        optionsHtml += `<option value="${item.id}">Vàng ${item.hienthi || ''}</option>`;
+      });
+      select.innerHTML = optionsHtml;
+      document.getElementById('quickCalcSection').style.display = 'block';
+    }
+
+    function calculateAndDisplayQuickResult() {
+      const resultDiv = document.getElementById('quickCalcResult');
+      const selectedId = document.getElementById('goldTypeSelect').value;
+      const weightInput = document.getElementById('goldWeightInput').value;
+      
+      const originalWeight = parseFloat(weightInput);
+      if (!selectedId || !originalWeight || originalWeight <= 0) {
+        resultDiv.innerHTML = '<p class="text-red-600">Vui lòng chọn loại vàng và nhập trọng lượng hợp lệ.</p>';
+        return;
+      }
+      
+      const item = internalData.find(i => i.id === selectedId);
+      const gold950 = getGold950FromPublic();
+      
+      if (!item || !gold950) {
+        resultDiv.innerHTML = '<p class="text-red-600">Không có đủ dữ liệu để tính toán.</p>';
+        return;
+      }
+      
+      const displayAge = item.code || item.age || 610;
+      const actualAge = goldUtils.getActualGoldAge(displayAge);
+      const internalBuy = (Number(item.buyingPrice ?? item.buyPrice) || 0) * 1000;
+      
+      const convertedWeight = goldUtils.convertWeight(originalWeight, actualAge, 950);
+      const originalValue = originalWeight * internalBuy;
+      const convertedValue = convertedWeight * gold950.buyPrice;
+      const diff = convertedValue - originalValue;
+      const cls = diff >= 0 ? 'text-green-600' : 'text-red-600';
+      const hienthi = item.hienthi ? ` (${item.hienthi})` : '';
+
+      resultDiv.innerHTML = `
+        <div class="p-2 text-xs border rounded border-gray-200 bg-gray-50">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="font-semibold">Tính toán chi tiết cho ${goldUtils.formatWeight(originalWeight)} vàng${hienthi}:</div>
+              <div>- Tuổi vàng thực tế: <span class="font-mono">${actualAge}</span></div>
+              <div>- Giá mua nội bộ (1 chỉ): <span class="font-mono">${goldUtils.formatMoney(internalBuy)}</span></div>
+              <div>- Giá vàng 950 (mua vào): <span class="font-mono">${goldUtils.formatMoney(gold950.buyPrice)}</span></div>
+            </div>
+            <div>
+              <div class="font-semibold">Công thức:</div>
+              <div>- Trọng lượng sau quy đổi = <span class="font-mono">(${originalWeight} * ${actualAge}) / 950 = ${goldUtils.formatWeight(convertedWeight)}</span></div>
+              <div>- Giá trị sau quy đổi = <span class="font-mono">${goldUtils.formatWeight(convertedWeight)} * ${goldUtils.formatMoney(gold950.buyPrice)} = ${goldUtils.formatMoney(convertedValue)}</span></div>
+              <div>- Chênh lệch = <span class="font-mono">${goldUtils.formatMoney(convertedValue)} - ${goldUtils.formatMoney(originalValue)} = <span class="font-semibold ${cls}">${diff >= 0 ? '+' : ''}${goldUtils.formatMoney(diff)}</span></span></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     async function loadAllData() {
       showLoadingOverlay();
       updateStatus('Đang tải...', 'loading');
@@ -384,6 +487,19 @@
         return;
       }
       loadAllData();
+      document.getElementById('calculateBtn').addEventListener('click', calculateAndDisplayQuickResult);
+      const internalTableBody = document.getElementById('internalTableBody');
+      internalTableBody.addEventListener('click', (e) => {
+        const button = e.target.closest('.collapse-button');
+        if (button) {
+          const targetId = button.dataset.target;
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            targetElement.classList.toggle('hidden');
+            button.classList.toggle('expanded');
+          }
+        }
+      });
       setInterval(loadAllData, 5 * 60 * 1000);
     });
   </script>
