@@ -98,15 +98,20 @@
 
   <script>
     // API config
+    const urlParams = new URLSearchParams(window.location.search);
+    const supabaseUrl = urlParams.get('url');
+    const token = urlParams.get('header');
+    const webgiaUrl = urlParams.get('webgia') || 'https://cors.trinhminhbao.workers.dev/?url=https://webgia.com/gia-vang/mi-hong/';
+
     const API_CONFIG = {
       supabase: {
-        url: 'https://ajsrzteoovahabndebyp.supabase.co/rest/v1/banggia?select=*',
+        url: supabaseUrl,
         headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqc3J6dGVvb3ZhaGFibmRlYnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDQ2ODYyNTgsImV4cCI6MjAyMDI2MjI1OH0.TcA527gIcm_6HmaYgK28l3vIrHKbqc0TrI_GEBdw8sc',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqc3J6dGVvb3ZhaGFibmRlYnlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDQ2ODYyNTgsImV4cCI6MjAyMDI2MjI1OH0.TcA527gIcm_6HmaYgK28l3vIrHKbqc0TrI_GEBdw8sc'
+          'apikey': token,
+          'Authorization': `Bearer ${token}`
         }
       },
-      webgia: 'https://cors.trinhminhbao.workers.dev/?url=https://webgia.com/gia-vang/mi-hong/'
+      webgia: webgiaUrl
     };
 
     let internalData = [];
