@@ -146,6 +146,43 @@
           id: `internal-item-${index}`,
           code: item.code === '9999' ? '995' : (item.code || item.age || null),
         }));
+
+        const gold610 = internalData.find(item => item.code === '610');
+        if (gold610) {
+          internalData.push({
+            id: 'internal-item-doi-610',
+            code: '610',
+            age: '610',
+            hienthi:'980 Đổi 100k',
+            buyingPrice: (Number(gold610.sellingPrice) || 0) - 100,
+            sellingPrice: (Number(gold610.sellingPrice) || 0) - 100,
+          });
+        }
+
+        const gold710 = internalData.find(item => item.code === '710');
+        if (gold710) {
+          internalData.push({
+            id: 'internal-item-doi-710',
+            code: '710',
+            age: '710',
+            hienthi:'710 Đổi 100k',
+            buyingPrice: (Number(gold710.sellingPrice) || 0) - 100,
+            sellingPrice: (Number(gold710.sellingPrice) || 0) - 100,
+          });
+        }
+
+        const gold980 = internalData.find(item => item.code === '980');
+        if (gold980) {
+          internalData.push({
+            id: 'internal-item-doi-980',
+            code: '980',
+            age: '980',
+            hienthi:'980 Đổi 100k',
+            buyingPrice: (Number(gold980.sellingPrice) || 0) - 100,
+            sellingPrice: (Number(gold980.sellingPrice) || 0) - 100,
+          });
+        }
+        console.log(internalData)
         renderInternalTable();
         return true;
       } catch (e) {
@@ -266,7 +303,7 @@
 
         html += `
           <tr id="${item.id}" class="hover:bg-gray-50">
-            <td class="px-3 py-2 text-xs font-medium text-gray-900">Vàng ${item.code || ''}</td>
+            <td class="px-3 py-2 text-xs font-medium text-gray-900">Vàng ${item.hienthi || ''}</td>
             <td class="px-3 py-2 text-xs text-gray-500">${item.code || item.age || 'N/A'}</td>
             <td class="px-3 py-2 text-xs font-semibold text-blue-600">${buy}</td>
             <td class="px-3 py-2 text-xs font-semibold text-blue-600">${sell}</td>
@@ -309,13 +346,13 @@
       const convertedValue = convertedWeight * gold950.buyPrice;
       const diff = convertedValue - originalValue;
       const cls = diff >= 0 ? 'text-green-600' : 'text-red-600';
-
+      const hienthi = item.hienthi ? ` (${item.hienthi})` : '';
       return `
         <div class="p-2 text-xs">
           <div class="grid grid-cols-2 gap-2">
             <div>
               <div class="font-semibold">Tính toán chi tiết:</div>
-              <div>- Tuổi vàng hiển thị: <span class="font-mono">${displayAge}</span></div>
+              <div>- Tuổi vàng hiển thị: <span class="font-mono">${hienthi}</span></div>
               <div>- Tuổi vàng thực tế để quy đổi: <span class="font-mono">${actualAge}</span></div>
               <div>- Giá vàng 950 (mua vào): <span class="font-mono">${goldUtils.formatMoney(gold950.buyPrice)}</span></div>
             </div>
