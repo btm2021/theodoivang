@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quy đổi Vàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 h-screen overflow-hidden">
+    <div class="h-full flex flex-col">
+        <!-- Header -->
+        <div class="bg-white border-b-2 border-yellow-500 p-2 flex-shrink-0">
+            <h1 class="text-lg font-bold text-gray-800">Hệ thống Quy đổi Vàng</h1>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Form nhập liệu -->
+            <div class="w-80 bg-white border-r border-gray-200 p-3 overflow-y-auto flex-shrink-0">
+                <h2 class="text-sm font-semibold mb-2 text-gray-800 border-b pb-1">Thông tin đầu vào</h2>
+
+                <!-- Vàng gốc -->
+                <div class="mb-3">
+                    <h3 class="text-xs font-medium mb-1 text-gray-700 bg-gray-50 p-1">Vàng gốc</h3>
+                    <div class="space-y-2">
+                        <input autocomplete="off" type="number" id="originalWeight" value="10"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                            placeholder="Trọng lượng (chỉ)" step="0.01">
+                        <input autocomplete="off" type="number" id="originalAge" value="610"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                            placeholder="Tuổi vàng">
+                        <input autocomplete="off" type="number" id="originalPrice" value="6400"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                            placeholder="Giá (VNĐ)">
+                    </div>
+                </div>
+
+                <!-- Vàng so sánh -->
+                <div class="mb-3">
+                    <h3 class="text-xs font-medium mb-1 text-gray-700 bg-gray-50 p-1">Vàng so sánh</h3>
+                    <div class="space-y-2">
+                        <input autocomplete="off" type="number" id="newAge" value="950"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                            placeholder="Tuổi vàng mới">
+                        <input autocomplete="off" type="number" id="newPrice" value="6500"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                            placeholder="Giá mới (VNĐ)">
+                        <select id="priceUnit"
+                            class="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-yellow-500">
+                            <option value="vnd_chi">VNĐ/chỉ</option>
+                            <option value="vnd_luong">VNĐ/lượng</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="autoCalculateStatus" class="text-xs text-gray-500 p-1 bg-blue-50 rounded hidden">
+                    Tự động tính toán...
+                </div>
+            </div>
+
+            <!-- Phiếu báo giá -->
+            <div class="flex-1 bg-gray-50 p-4 overflow-y-auto">
+                <div id="comparisonResult" class="h-full flex items-center justify-center">
+                    <div class="text-center text-gray-400">
+                        <p class="text-sm">Nhập đầy đủ thông tin để xem phiếu báo giá</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
