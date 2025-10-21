@@ -57,7 +57,7 @@
             </div>
 
             <b-row v-else>
-                <b-col lg="6" class="mb-4">
+                <b-col lg="8" class="mb-4">
                     <b-card header="Giá nội bộ" header-bg-variant="primary" header-text-variant="white">
                         <b-table :items="internalData" :fields="internalFields" striped hover responsive small>
                             <template #cell(name)="data">
@@ -82,7 +82,7 @@
                     </b-card>
                 </b-col>
 
-                <b-col lg="6">
+                <b-col lg="4">
                     <!-- Gợi ý giá 610 -->
                     <b-card v-if="suggestion610" header="🎯 Gợi ý giá 610" header-bg-variant="warning"
                         header-text-variant="dark" class="mb-3">
@@ -146,7 +146,7 @@
                     <!-- Public Prices -->
                  
                 </b-col>
-                <b-col lg="6">
+                <b-col lg="12">
                     <b-card header="Giá công khai (Webgia)" header-bg-variant="success" header-text-variant="white">
                         <b-table :items="publicData" :fields="publicFields" striped hover responsive small>
                             <template #cell(buyPrice)="data">
