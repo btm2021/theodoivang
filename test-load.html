@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Script Loading</title>
+</head>
+<body>
+    <h1>Test Script Loading</h1>
+    <div id="result"></div>
+
+    <script src="gold-utils.js"></script>
+    <script src="pricing-engine.js"></script>
+    <script>
+        const result = document.getElementById('result');
+        
+        // Test GoldUtils
+        if (typeof window.GoldUtils !== 'undefined') {
+            result.innerHTML += '<p style="color: green;">✓ GoldUtils loaded successfully</p>';
+            result.innerHTML += '<p>formatMoney(1000000): ' + window.GoldUtils.formatMoney(1000000) + '</p>';
+            result.innerHTML += '<p>extractAge("Vàng 610"): ' + window.GoldUtils.extractAge("Vàng 610") + '</p>';
+        } else {
+            result.innerHTML += '<p style="color: red;">✗ GoldUtils NOT loaded</p>';
+        }
+        
+        // Test PricingEngine
+        if (typeof window.PricingEngine !== 'undefined') {
+            result.innerHTML += '<p style="color: green;">✓ PricingEngine loaded successfully</p>';
+            
+            // Test optimization
+            const testResult = window.PricingEngine.optimizeGold610PricesV2({
+                public610BuyPrice: 8000000,
+                gold950BuyPrice: 12000000
+            });
+            
+            result.innerHTML += '<p>Test optimization result:</p>';
+            result.innerHTML += '<pre>' + JSON.stringify(testResult, null, 2) + '</pre>';
+        } else {
+            result.innerHTML += '<p style="color: red;">✗ PricingEngine NOT loaded</p>';
+        }
+    </script>
+</body>
+</html>

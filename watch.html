@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch - Theo dõi Giá Vàng</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Vue 2 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+
+    <!-- Bootstrap Vue -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-vue@2.23.1/dist/bootstrap-vue.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-vue@2.23.1/dist/bootstrap-vue.min.js"></script>
+
+    <!-- Gold Utils -->
+    <script src="gold-utils.js"></script>
+    <script src="pricing-engine.js"></script>
+
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        .price-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .price-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .detail-row {
+            background-color: #f8f9fa;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <b-container fluid class="py-4">
+            <!-- Header -->
+
+
+            <!-- Loading -->
+            <div v-if="isLoading && !internalData.length" class="text-center">
+                <div class="loading-spinner"></div>
+                <p class="text-muted">Đang tải dữ liệu...</p>
+            </div>
+
+            <!-- Main Content -->
+            <b-row v-else>
+                <!-- Internal Prices Table -->
+                <b-col lg="8" class="mb-4">
+                    <b-card header="Giá nội bộ" header-bg-variant="primary" header-text-variant="white">
+                        <b-table :items="internalData" :fields="internalFields" striped hover responsive small
+                            :busy="isLoading">
+                            <template #cell(name)="data">
+                                <strong>Vàng {{ data.item.hienthi }}</strong>
+                            </template>
+
+                            <template #cell(buyingPrice)="data">
+                                <span class="text-primary font-weight-bold">
+                                    {{ formatPrice(data.item.buyingPrice) }}
+                                </span>
+                            </template>
+
+                            <template #cell(sellingPrice)="data">
+                                <span class="text-primary font-weight-bold">
+                                    {{ formatPrice(data.item.sellingPrice) }}
+                                </span>
+                            </template>
+
+                            <template #cell(buyDiff)="data">
+                                <span :class="getDiffClass(data.item.buyProfit)">
+                                    {{ data.item.buyDiffText }}
+                                </span>
+                            </template>
+                        </b-table>
+                    </b-card>
+                </b-col>
+
+                <!-- Sidebar -->
+                <b-col lg="4">
+                    <!-- Price Suggestion for 610 -->
+                    <b-card v-if="suggestion610" header="🎯 Gợi ý giá 610" header-bg-variant="warning"
+                        header-text-variant="dark" class="mb-3">
+                        <b-row class="mb-2">
+                            <b-col cols="6">
+                                <div class="text-muted small">Giá mua gợi ý:</div>
+                                <div class="h5 text-success mb-0">{{ formatPrice(suggestion610.suggestedBuyPrice / 1000)
+                                    }}</div>
+                            </b-col>
+                            <b-col cols="6">
+                                <div class="text-muted small">Giá bán gợi ý:</div>
+                                <div class="h5 text-danger mb-0">{{ formatPrice(suggestion610.suggestedSellPrice / 1000)
+                                    }}</div>
+                            </b-col>
+                        </b-row>
+
+                        <hr class="my-2">
+
+                        <div class="small">
+                            <b-row class="mb-1">
+                                <b-col cols="6" class="text-muted">Chênh lệch:</b-col>
+                                <b-col cols="6" class="text-right font-weight-bold">{{ formatPrice(suggestion610.spread)
+                                    }}</b-col>
+                            </b-row>
+                            <b-row class="mb-1">
+                                <b-col cols="6" class="text-muted">Lợi nhuận/lượng:</b-col>
+                                <b-col cols="6" class="text-right font-weight-bold text-success">{{
+                                    formatPrice(suggestion610.profitPerLuong) }}</b-col>
+                            </b-row>
+                            <b-row class="mb-1">
+                                <b-col cols="6" class="text-muted">Margin mua (950):</b-col>
+                                <b-col cols="6" class="text-right" :class="getMarginClass(suggestion610.buyMargin)">
+                                    {{ formatPrice(suggestion610.buyMargin) }}
+                                </b-col>
+                            </b-row>
+                            <b-row class="mb-1">
+                                <b-col cols="6" class="text-muted">Margin bán (950):</b-col>
+                                <b-col cols="6" class="text-right" :class="getMarginClass(suggestion610.sellMargin)">
+                                    {{ formatPrice(suggestion610.sellMargin) }}
+                                </b-col>
+                            </b-row>
+                            <b-row>
+                                <b-col cols="6" class="text-muted">Cạnh tranh:</b-col>
+                                <b-col cols="6" class="text-right">
+                                    <b-badge variant="info">{{ suggestion610.competitiveness }}%</b-badge>
+                                </b-col>
+                            </b-row>
+                        </div>
+
+                        <b-alert show variant="info" class="mt-2 mb-0 small py-2">
+                            <small>
+                                ✓ Chênh lệch: {{ formatPrice(suggestion610.spread) }} (400-600k)<br>
+                                ✓ Margin an toàn: {{ formatPrice(suggestion610.buyMargin) }} (3-5tr)<br>
+                                ✓ Mốc 50k: Đã tối ưu
+                            </small>
+                        </b-alert>
+                    </b-card>
+
+                    <!-- Public Prices -->
+                    <b-card header="Giá công khai (Webgia)" header-bg-variant="success" header-text-variant="white">
+                        <b-table :items="publicData" :fields="publicFields" striped hover responsive small>
+                            <template #cell(buyPrice)="data">
+                                <span class="text-success font-weight-bold">
+                                    {{ formatPrice(data.item.buyPrice / 1000) }}
+                                </span>
+                            </template>
+
+                            <template #cell(sellPrice)="data">
+                                <span class="text-success font-weight-bold">
+                                    {{ formatPrice(data.item.sellPrice / 1000) }}
+                                </span>
+                            </template>
+                        </b-table>
+                    </b-card>
+                </b-col>
+            </b-row>
+        </b-container>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    isLoading: false,
+                    lastUpdate: '',
+                    internalData: [],
+                    publicData: [],
+                    gold950BuyPrice: 0,
+                    suggestion610: null,
+                    suggestion610V2: null,
+                    recentGold950Prices: [],
+
+                    internalFields: [
+                        { key: 'name', label: 'Loại', sortable: true },
+                        { key: 'code', label: 'Tuổi', sortable: true },
+                        { key: 'buyingPrice', label: 'Mua', sortable: true },
+                        { key: 'sellingPrice', label: 'Bán', sortable: true },
+                        { key: 'buyDiff', label: 'Chênh Mua (Triệu/Lượng)', sortable: true }
+                    ],
+
+                    publicFields: [
+                        { key: 'name', label: 'Loại', sortable: true },
+                        { key: 'age', label: 'Tuổi', sortable: true },
+                        { key: 'buyPrice', label: 'Mua', sortable: true },
+                        { key: 'sellPrice', label: 'Bán', sortable: true }
+                    ],
+
+                    apiConfig: {
+                        supabase: {
+                            url: '',
+                            headers: {}
+                        },
+                        webgia: ''
+                    }
+                };
+            },
+
+            methods: {
+                initApiConfig() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    this.apiConfig.supabase.url = urlParams.get('url');
+                    const token = urlParams.get('header');
+                    this.apiConfig.supabase.headers = {
+                        'apikey': token,
+                        'Authorization': `Bearer ${token}`
+                    };
+                    this.apiConfig.webgia = urlParams.get('webgia') ||
+                        'https://cors.trinhminhbao.workers.dev/?url=https://webgia.com/gia-vang/mi-hong/';
+                },
+
+                async fetchInternalData() {
+                    try {
+                        const res = await fetch(this.apiConfig.supabase.url, {
+                            headers: this.apiConfig.supabase.headers
+                        });
+
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                        const data = await res.json();
+                        let processed = (data || []).map((item, index) => ({
+                            ...item,
+                            id: `internal-${index}`,
+                            code: item.code === '9999' ? '995' : (item.code || item.age || null)
+                        }));
+
+                        // Add special items
+                        const gold610 = processed.find(item => item.code === '610');
+                        if (gold610) {
+                            processed.push({
+                                id: 'internal-doi-610',
+                                code: '610',
+                                age: '610',
+                                hienthi: '610 Đổi 100k',
+                                buyingPrice: (Number(gold610.sellingPrice) || 0) - 100,
+                                sellingPrice: (Number(gold610.sellingPrice) || 0) - 100
+                            });
+                        }
+
+                        const gold710 = processed.find(item => item.code === '710');
+                        if (gold710) {
+                            processed.push({
+                                id: 'internal-doi-710',
+                                code: '710',
+                                age: '710',
+                                hienthi: '710 Đổi 100k',
+                                buyingPrice: (Number(gold710.sellingPrice) || 0) - 100,
+                                sellingPrice: (Number(gold710.sellingPrice) || 0) - 100
+                            });
+                        }
+
+                        const gold980 = processed.find(item => item.code === '980');
+                        if (gold980) {
+                            processed.push({
+                                id: 'internal-doi-980',
+                                code: '980',
+                                age: '980',
+                                hienthi: '980 Đổi 100k',
+                                buyingPrice: (Number(gold980.sellingPrice) || 0) - 100,
+                                sellingPrice: (Number(gold980.sellingPrice) || 0) - 100
+                            });
+                        }
+
+                        // Sort
+                        const getOrder = (item) => {
+                            const key = item.hienthi || item.code;
+                            if (key === '99') return 0;
+                            if (key === '980') return 1;
+                            if (key === '710') return 2;
+                            if (key === '610') return 3;
+                            if (key === '980 Đổi 100k') return 4;
+                            if (key === '610 Đổi 100k') return 5;
+                            if (key === '710 Đổi 100k') return 6;
+                            return Infinity;
+                        };
+                        processed.sort((a, b) => getOrder(a) - getOrder(b));
+
+                        this.internalData = processed;
+                        this.calculateDifferences();
+                        return true;
+                    } catch (e) {
+                        console.error('Lỗi tải dữ liệu nội bộ:', e);
+                        return false;
+                    }
+                },
+
+                async fetchPublicData() {
+                    try {
+                        const res = await fetch(this.apiConfig.webgia);
+                        const html = await res.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const table = doc.querySelector('table.table-radius.table-hover');
+
+                        if (!table) throw new Error('Không tìm thấy bảng giá');
+
+                        const rows = table.querySelectorAll('tbody tr');
+                        const out = [];
+
+                        rows.forEach(row => {
+                            const nameCell = row.querySelector('th');
+                            const cells = row.querySelectorAll('td');
+                            if (!nameCell || cells.length < 2) return;
+
+                            const name = nameCell.textContent.trim();
+                            let buyPrice = 0, sellPrice = 0;
+
+                            // Parse buy price
+                            const buyCell = cells[0];
+                            const buyText = buyCell.textContent.trim();
+                            if (buyCell.hasAttribute('nb')) {
+                                buyPrice = window.GoldUtils.decodePrice(buyCell.getAttribute('nb'));
+                            } else if (buyText !== '-') {
+                                const n = parseFloat(buyText.replace(/[^\d]/g, ''));
+                                if (!isNaN(n) && n > 0) buyPrice = n;
+                            }
+
+                            // Parse sell price
+                            const sellCell = cells[1];
+                            const sellText = sellCell.textContent.trim();
+                            if (sellCell.hasAttribute('nb')) {
+                                sellPrice = window.GoldUtils.decodePrice(sellCell.getAttribute('nb'));
+                            } else if (sellText !== '-') {
+                                const n = parseFloat(sellText.replace(/[^\d]/g, ''));
+                                if (!isNaN(n) && n > 0) sellPrice = n;
+                            }
+
+                            out.push({
+                                name,
+                                age: window.GoldUtils.extractAge(name),
+                                buyPrice,
+                                sellPrice
+                            });
+                        });
+
+                        this.publicData = out;
+
+                        // Get gold 950 price
+                        const gold950 = out.find(x => Number(x.age) === 950 && Number(x.buyPrice) > 0);
+                        if (gold950) {
+                            this.gold950BuyPrice = gold950.buyPrice;
+                        }
+
+                        this.calculateDifferences();
+                        this.calculateSuggestion610();
+                        return true;
+                    } catch (e) {
+                        console.error('Lỗi tải dữ liệu công khai:', e);
+                        return false;
+                    }
+                },
+
+                calculateSuggestion610() {
+                    if (!this.gold950BuyPrice || !this.publicData.length) return;
+
+                    const gold610 = this.publicData.find(x => Number(x.age) === 610 && Number(x.buyPrice) > 0);
+                    if (!gold610) return;
+
+                    this.suggestion610 = window.GoldUtils.optimizeGold610Prices(
+                        gold610.buyPrice,
+                        this.gold950BuyPrice
+                    );
+                },
+
+                calculateDifferences() {
+                    if (!this.gold950BuyPrice || !this.internalData.length) return;
+
+                    this.internalData = this.internalData.map(item => {
+                        const actualAge = window.GoldUtils.getActualGoldAge(item.code || item.age || 610);
+                        const originalWeight = 10;
+                        const convertedWeight = window.GoldUtils.convertWeight(originalWeight, actualAge, 950);
+
+                        // Buy difference
+                        const internalBuy = (Number(item.buyingPrice) || 0) * 1000;
+                        const originalValue = originalWeight * internalBuy;
+                        const convertedValue = convertedWeight * this.gold950BuyPrice;
+                        const buyDiff = convertedValue - originalValue;
+                        const buyPct = window.GoldUtils.calculatePercentageDiff(convertedValue, originalValue);
+
+                        return {
+                            ...item,
+                            actualAge,
+                            convertedWeight: convertedWeight.toFixed(2),
+                            buyProfit: buyDiff,
+                            buyDiffText: internalBuy > 0
+                                ? `${buyDiff >= 0 ? '+' : ''}${window.GoldUtils.formatMoney(Math.abs(buyDiff))} (${buyDiff >= 0 ? '+' : ''}${buyPct.toFixed(1)}%)`
+                                : '-'
+                        };
+                    });
+                },
+
+                async loadAllData() {
+                    this.isLoading = true;
+                    await Promise.all([
+                        this.fetchInternalData(),
+                        this.fetchPublicData()
+                    ]);
+                    this.isLoading = false;
+                },
+
+
+                formatPrice(price) {
+                    return window.GoldUtils.formatMoney((Number(price) || 0) * 1000);
+                },
+
+                getDiffClass(profit) {
+                    if (!profit) return '';
+                    return profit >= 0 ? 'price-positive' : 'price-negative';
+                },
+
+                getMarginClass(margin) {
+                    if (!margin) return '';
+                    if (margin >= 3000 && margin <= 5000) return 'text-success font-weight-bold';
+                    if (margin >= 2000 && margin < 3000) return 'text-warning';
+                    return 'text-danger';
+                }
+            },
+
+            mounted() {
+                this.initApiConfig();
+                this.loadAllData();
+
+                // Auto refresh every 5 minutes
+                setInterval(() => {
+                    this.loadAllData();
+                }, 5 * 60 * 1000);
+            }
+        });
+    </script>
+</body>
+
+</html>
+""
