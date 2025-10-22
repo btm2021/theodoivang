@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chuyển đổi giá vàng 950</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-vue@2.23.1/dist/bootstrap-vue.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap-vue@2.23.1/dist/bootstrap-vue.min.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .full-height {
+            min-height: 100vh;
+        }
+
+        .price-input {
+            font-size: 1.5rem;
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .price-input:focus {
+            border-color: #0056b3;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        h3 {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+
+        h5 {
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 0.5rem;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table td {
+            vertical-align: middle;
+            padding: 0.75rem;
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(0, 123, 255, 0.03);
+        }
+
+        .diff-positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .diff-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .price-input {
+                font-size: 1.2rem;
+                padding: 12px;
+            }
+
+            h3 {
+                font-size: 1.5rem;
+            }
+
+            h5 {
+                font-size: 1.1rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            .table {
+                font-size: 0.85rem;
+            }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <div v-if="isLoading" class="loading-overlay">
+            <div class="text-center">
+                <div class="spinner"></div>
+                <p class="text-white mt-3">Đang tải dữ liệu...</p>
+            </div>
+        </div>
+
+        <b-container fluid class="full-height p-4">
+            <h3 class="text-center mb-4">Chuyển đổi giá vàng 950</h3>
+
+            <b-row class="mb-4">
+                <b-col md="6" offset-md="3" lg="4" offset-lg="4">
+                    <b-form-group label="Nhập giá vàng 950 (nghìn đồng/chỉ)" label-class="font-weight-bold text-center">
+                        <b-form-input v-model.number="input950Price" type="number" class="price-input"
+                            placeholder="8500" @input="calculatePrices"></b-form-input>
+                    </b-form-group>
+                </b-col>
+            </b-row>
+
+            <b-row v-if="input950Price > 0">
+                <b-col xl="7" lg="12" class="mb-4">
+                    <b-card>
+                        <h5 class="mb-4">Bảng quy đổi giá</h5>
+                        <div class="table-responsive">
+                            <b-table :items="convertedPrices" :fields="convertedFields" striped hover>
+                                <template #cell(type)="data">
+                                    <strong class="text-dark">{{ data.value }}</strong>
+                                </template>
+                                <template #cell(price)="data">
+                                    <span class="font-weight-bold text-primary">{{ formatPrice(data.value) }}</span>
+                                </template>
+                                <template #cell(internalPrice)="data">
+                                    <span v-if="data.value > 0" class="font-weight-bold text-success">{{
+                                        formatPrice(data.value) }}</span>
+                                    <span v-else class="text-muted">-</span>
+                                </template>
+                                <template #cell(diff)="data">
+                                    <span v-if="data.item.internalPrice > 0"
+                                        :class="data.value >= 0 ? 'diff-positive' : 'diff-negative'">
+                                        {{ data.value >= 0 ? '+' : '' }}{{ formatPrice(data.value) }}
+                                    </span>
+                                    <span v-else class="text-muted">-</span>
+                                </template>
+                            </b-table>
+                        </div>
+                    </b-card>
+                </b-col>
+
+                <b-col xl="5" lg="12" class="mb-4">
+                    <b-card v-if="publicData.length > 0">
+                        <h5 class="mb-4">Giá công khai (Webgia)</h5>
+                        <div class="table-responsive">
+                            <b-table :items="publicData" :fields="publicFields" striped hover>
+                                <template #cell(buyPrice)="data">
+                                    <span class="text-success font-weight-bold">{{ formatPrice(data.value / 1000)
+                                        }}</span>
+                                </template>
+                                <template #cell(sellPrice)="data">
+                                    <span class="text-danger font-weight-bold">{{ formatPrice(data.value / 1000)
+                                        }}</span>
+                                </template>
+                            </b-table>
+                        </div>
+                    </b-card>
+                </b-col>
+            </b-row>
+
+            <div v-if="input950Price === 0" class="text-center text-muted py-5">
+                <p>Vui lòng nhập giá vàng 950 để bắt đầu</p>
+            </div>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">Cập nhật lần cuối: {{ lastUpdate }}</small>
+            </div>
+        </b-container>
+    </div>
+
+    <script src="../../gold-utils.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data() {
+                return {
+                    input950Price: 0,
+                    convertedPrices: [],
+                    publicData: [],
+                    internalData: [],
+                    comparisonData: [],
+                    isLoading: false,
+                    lastUpdate: '',
+                    convertedFields: [
+                        { key: 'type', label: 'Loại', class: 'text-center' },
+                        { key: 'conventionalAge', label: 'Tuổi QU', class: 'text-center' },
+                        { key: 'actualAge', label: 'Tuổi thực', class: 'text-center' },
+                        { key: 'lossConstant', label: 'Hằng số', class: 'text-center' },
+                        { key: 'finalAge', label: 'Tuổi TT', class: 'text-center' },
+                        { key: 'price', label: 'Giá QĐ', class: 'text-right' },
+                        { key: 'internalPrice', label: 'Giá NB', class: 'text-right' },
+                        { key: 'diff', label: 'Chênh lệch', class: 'text-right' }
+                    ],
+                    publicFields: [
+                        { key: 'name', label: 'Loại' },
+                        { key: 'age', label: 'Tuổi' },
+                        { key: 'buyPrice', label: 'Mua' },
+                        { key: 'sellPrice', label: 'Bán' }
+                    ],
+                    apiConfig: {
+                        supabase: { url: '', headers: {} },
+                        webgia: ''
+                    }
+                };
+            },
+            methods: {
+                initApiConfig() {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    this.apiConfig.supabase.url = urlParams.get('url');
+                    const token = urlParams.get('header');
+                    this.apiConfig.supabase.headers = {
+                        'apikey': token,
+                        'Authorization': `Bearer ${token}`
+                    };
+                    this.apiConfig.webgia = urlParams.get('webgia') ||
+                        'https://cors.trinhminhbao.workers.dev/?url=https://webgia.com/gia-vang/mi-hong/';
+                },
+                calculatePrices() {
+                    if (!this.input950Price || this.input950Price <= 0) {
+                        this.convertedPrices = [];
+                        return;
+                    }
+
+                    const basePrice = this.input950Price * 1000;
+                    const LOSS_CONSTANT = -2;
+
+                    const goldTypes = [
+                        { type: '9950', conventionalAge: 9950, actualAge: 950 },
+                        { type: '980', conventionalAge: 980, actualAge: 970 },
+                        { type: '710', conventionalAge: 710, actualAge: 700 },
+                        { type: '610', conventionalAge: 610, actualAge: 600 }
+                    ];
+
+                    const typeMap = {
+                        '9950': '99',
+                        '980': '980',
+                        '710': '710',
+                        '610': '610'
+                    };
+
+                    this.convertedPrices = goldTypes.map(gold => {
+                        const finalAge = gold.actualAge + LOSS_CONSTANT;
+                        const weight950 = 1;
+                        const weightConverted = window.GoldUtils.convertWeight(weight950, 950, finalAge);
+                        const price = basePrice / weightConverted;
+
+                        const internalCode = typeMap[gold.type];
+                        const internal = this.internalData.find(item => item.code === internalCode);
+                        const internalPrice = internal ? (Number(internal.buyingPrice) || 0) : 0;
+                        const diff = internalPrice > 0 ? (price / 1000 - internalPrice) : 0;
+                        const diffPercent = internalPrice > 0 ? ((diff / internalPrice) * 100) : 0;
+
+                        return {
+                            type: gold.type,
+                            conventionalAge: gold.conventionalAge,
+                            actualAge: gold.actualAge,
+                            lossConstant: LOSS_CONSTANT,
+                            finalAge: finalAge,
+                            price: price / 1000,
+                            internalPrice: internalPrice,
+                            diff: diff,
+                            diffPercent: diffPercent
+                        };
+                    });
+                },
+                async fetchInternalData() {
+                    if (!this.apiConfig.supabase.url) return false;
+                    try {
+                        const res = await fetch(this.apiConfig.supabase.url, {
+                            headers: this.apiConfig.supabase.headers
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        const data = await res.json();
+                        this.internalData = (data || []).map(item => ({
+                            ...item,
+                            code: item.code === '9999' ? '995' : (item.code || item.age || null)
+                        }));
+                        return true;
+                    } catch (e) {
+                        console.error('Lỗi tải dữ liệu nội bộ:', e);
+                        return false;
+                    }
+                },
+                async fetchPublicData() {
+                    try {
+                        const res = await fetch(this.apiConfig.webgia);
+                        const html = await res.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const table = doc.querySelector('table.table-radius.table-hover');
+                        if (!table) throw new Error('Không tìm thấy bảng giá');
+                        const rows = table.querySelectorAll('tbody tr');
+                        const out = [];
+                        rows.forEach(row => {
+                            const nameCell = row.querySelector('th');
+                            const cells = row.querySelectorAll('td');
+                            if (!nameCell || cells.length < 2) return;
+                            const name = nameCell.textContent.trim();
+                            let buyPrice = 0, sellPrice = 0;
+                            const buyCell = cells[0];
+                            const buyText = buyCell.textContent.trim();
+                            if (buyCell.hasAttribute('nb')) {
+                                buyPrice = window.GoldUtils.decodePrice(buyCell.getAttribute('nb'));
+                            } else if (buyText !== '-') {
+                                const n = parseFloat(buyText.replace(/[^\d]/g, ''));
+                                if (!isNaN(n) && n > 0) buyPrice = n;
+                            }
+                            const sellCell = cells[1];
+                            const sellText = sellCell.textContent.trim();
+                            if (sellCell.hasAttribute('nb')) {
+                                sellPrice = window.GoldUtils.decodePrice(sellCell.getAttribute('nb'));
+                            } else if (sellText !== '-') {
+                                const n = parseFloat(sellText.replace(/[^\d]/g, ''));
+                                if (!isNaN(n) && n > 0) sellPrice = n;
+                            }
+                            out.push({
+                                name,
+                                age: window.GoldUtils.extractAge(name),
+                                buyPrice,
+                                sellPrice
+                            });
+                        });
+                        this.publicData = out;
+                        return true;
+                    } catch (e) {
+                        console.error('Lỗi tải dữ liệu công khai:', e);
+                        return false;
+                    }
+                },
+
+                async loadAllData() {
+                    this.isLoading = true;
+                    await Promise.all([
+                        this.fetchInternalData(),
+                        this.fetchPublicData()
+                    ]);
+                    this.isLoading = false;
+                    this.lastUpdate = new Date().toLocaleString('vi-VN');
+                    this.calculatePrices();
+                },
+                formatPrice(price) {
+                    return window.GoldUtils.formatMoney(Number(price) * 1000);
+                }
+            },
+            mounted() {
+                this.initApiConfig();
+                this.loadAllData();
+                setInterval(() => {
+                    this.loadAllData();
+                }, 5 * 60 * 1000);
+            }
+        });
+    </script>
+</body>
+
+</html>
