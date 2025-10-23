@@ -232,7 +232,7 @@
         </b-container>
     </div>
 
-    <script src="../../gold-utils.js"></script>
+    <script src="gold-utils.js"></script>
     <script>
         new Vue({
             el: '#app',
@@ -251,8 +251,8 @@
                         { key: 'actualAge', label: 'Tuổi thực', class: 'text-center' },
                         { key: 'lossConstant', label: 'Hằng số', class: 'text-center' },
                         { key: 'finalAge', label: 'Tuổi TT', class: 'text-center' },
-                        { key: 'price', label: 'Giá QĐ', class: 'text-right' },
-                        { key: 'internalPrice', label: 'Giá NB', class: 'text-right' },
+                        { key: 'price', label: 'Giá Quy Đổi', class: 'text-right' },
+                        { key: 'internalPrice', label: 'Giá Nhà', class: 'text-right' },
                         { key: 'diff', label: 'Chênh lệch', class: 'text-right' }
                     ],
                     publicFields: [
@@ -289,14 +289,14 @@
                     const LOSS_CONSTANT = -2;
 
                     const goldTypes = [
-                        { type: '9950', conventionalAge: 9950, actualAge: 950 },
+                        { type: '995', conventionalAge: 995, actualAge: 995 },
                         { type: '980', conventionalAge: 980, actualAge: 970 },
                         { type: '710', conventionalAge: 710, actualAge: 700 },
                         { type: '610', conventionalAge: 610, actualAge: 600 }
                     ];
 
                     const typeMap = {
-                        '9950': '99',
+                        '995': '995',
                         '980': '980',
                         '710': '710',
                         '610': '610'
@@ -309,7 +309,9 @@
                         const price = basePrice / weightConverted;
 
                         const internalCode = typeMap[gold.type];
+                     
                         const internal = this.internalData.find(item => item.code === internalCode);
+                      
                         const internalPrice = internal ? (Number(internal.buyingPrice) || 0) : 0;
                         const diff = internalPrice > 0 ? (price / 1000 - internalPrice) : 0;
                         const diffPercent = internalPrice > 0 ? ((diff / internalPrice) * 100) : 0;
